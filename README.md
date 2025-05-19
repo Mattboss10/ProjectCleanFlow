@@ -30,5 +30,8 @@ venv\Scripts\activate        # Windows
 # Install required packages
 pip install -r requirements.txt
 
+**Run the Flask server:**
+
+
 
 
