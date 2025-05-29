@@ -4,8 +4,8 @@ ProjectCleanFlow is a mobile-first reporting tool for flooding and other water-r
 
 ## ✨ Features so far
 
--React Native frontend (via Expo)
--Leaflet map interface embedded in a WebView
--Flask backend server for handling reports
+- React Native frontend (via Expo)
+- Leaflet map interface embedded in a WebView
+- Flask backend server for handling reports
 - Cross-platform setup (Mac & Windows support)
 - Private IP Protection
