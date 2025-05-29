@@ -8,4 +8,4 @@ ProjectCleanFlow is a mobile-first reporting tool for flooding and other water-r
 -Leaflet map interface embedded in a WebView
 -Flask backend server for handling reports
 - Cross-platform setup (Mac & Windows support)
--`.gitignore` and private IP protection
+- Private IP Protection
