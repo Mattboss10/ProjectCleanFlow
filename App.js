@@ -8,7 +8,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <WebView
-        source={{ uri: 'http://192.168.100.211:3000/leafletMap.html' }}
+        source={{ uri: 'http://<Your-IP>:3000/leafletMap.html' }}
         style={{ flex: 1 }}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
