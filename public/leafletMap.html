@@ -4,59 +4,367 @@
   <meta charset="utf-8" />
   <title>Leaflet Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
     #map {
-      height: 100vh;
+      height: 100%;
       width: 100%;
+      background-color: #f8f9fa;
+    }
+    .map-controls {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .map-button {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.2s ease;
+    }
+    .map-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .map-button:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    .map-button.active {
+      background: #2196F3;
+      color: white;
+    }
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 1000;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      max-width: 80%;
+    }
+    .button {
+      background: #2196F3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      margin: 5px;
+      cursor: pointer;
+    }
+    .button:hover {
+      background: #1976D2;
+    }
+    .button.secondary {
+      background: #757575;
+    }
+    .button.secondary:hover {
+      background: #616161;
+    }
+    .instructions {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 5px;
+      font-size: 0.9em;
+      text-align: left;
+    }
+    .tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
     }
   </style>
 </head>
 <body>
+  <div id="loading" class="loading">
+    <div>📍 Location Access Required</div>
+    <div class="instructions">
+      <strong>To enable location:</strong>
+      <ol>
+        <li>Click "Enable Location" below</li>
+        <li>When prompted by your browser, click "Allow"</li>
+        <li>If denied, click the location icon in your browser's address bar to update permissions</li>
+      </ol>
+    </div>
+    <button id="allowLocation" class="button">Enable Location</button>
+    <button id="useDefaultLocation" class="button secondary">Skip (Use Default Location)</button>
+    <div id="locationStatus" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
+  </div>
+
   <div id="map"></div>
+  
+  <div class="map-controls">
+    <button id="markerButton" class="map-button" title="Add Marker">📍</button>
+    <button id="polygonButton" class="map-button" title="Draw Area">⬡</button>
+    <button id="deleteButton" class="map-button" title="Delete Selected">🗑️</button>
+    <button id="locationButton" class="map-button" title="Go to my location">��</button>
+  </div>
+  
+  <div id="tooltip" class="tooltip"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
   <script>
-    const map = L.map('map').setView([25.7617, -80.1918], 13); // Miami coords
+    let map;
+    let drawingMode = null;
+    let drawnItems;
+    let selectedLayer = null;
+    const loading = document.getElementById('loading');
+    const locationButton = document.getElementById('locationButton');
+    const allowLocationButton = document.getElementById('allowLocation');
+    const useDefaultLocationButton = document.getElementById('useDefaultLocation');
+    const locationStatus = document.getElementById('locationStatus');
+    const markerButton = document.getElementById('markerButton');
+    const polygonButton = document.getElementById('polygonButton');
+    const deleteButton = document.getElementById('deleteButton');
+    const tooltip = document.getElementById('tooltip');
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+    function showTooltip(text, x, y) {
+      tooltip.textContent = text;
+      tooltip.style.left = `${x + 10}px`;
+      tooltip.style.top = `${y + 10}px`;
+      tooltip.style.display = 'block';
+    }
 
-    const drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
+    function hideTooltip() {
+      tooltip.style.display = 'none';
+    }
 
-    const drawControl = new L.Control.Draw({
-      edit: { featureGroup: drawnItems },
-      draw: {
-        polygon: true,
-        polyline: false,
-        rectangle: false,
-        circle: false,
-        marker: true
+    function sendDebugMessage(message) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'debug',
+          message: message
+        }));
+      }
+      console.log('Debug:', message);
+      locationStatus.textContent = message;
+    }
+
+    function initMap(lat, lng) {
+      try {
+        sendDebugMessage(`Initializing map at ${lat}, ${lng}`);
+        
+        if (!map) {
+          map = L.map('map', {
+            zoomControl: false,
+            attributionControl: false
+          }).setView([lat, lng], 15);
+          
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(map);
+
+          drawnItems = new L.FeatureGroup();
+          map.addLayer(drawnItems);
+
+          // Map click handler for markers
+          map.on('click', function(e) {
+            if (drawingMode === 'marker') {
+              const marker = L.marker(e.latlng).addTo(drawnItems);
+              marker.on('click', function() {
+                if (selectedLayer === marker) {
+                  selectedLayer = null;
+                  marker.setIcon(new L.Icon.Default());
+                } else {
+                  if (selectedLayer) {
+                    selectedLayer.setIcon(new L.Icon.Default());
+                  }
+                  selectedLayer = marker;
+                  marker.setIcon(new L.Icon.Default({ className: 'selected-marker' }));
+                }
+              });
+
+              const message = {
+                type: 'marker',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [e.latlng.lng, e.latlng.lat]
+                }
+              };
+              if (window.ReactNativeWebView) {
+                window.ReactNativeWebView.postMessage(JSON.stringify(message));
+              }
+            }
+          });
+
+          let polygonPoints = [];
+          let currentPolygon = null;
+
+          // Map click handler for polygons
+          map.on('click', function(e) {
+            if (drawingMode === 'polygon') {
+              polygonPoints.push([e.latlng.lat, e.latlng.lng]);
+              
+              if (currentPolygon) {
+                map.removeLayer(currentPolygon);
+              }
+              
+              if (polygonPoints.length > 2) {
+                currentPolygon = L.polygon(polygonPoints, {
+                  color: '#2196F3',
+                  weight: 2
+                }).addTo(drawnItems);
+
+                currentPolygon.on('click', function() {
+                  if (selectedLayer === currentPolygon) {
+                    selectedLayer = null;
+                    currentPolygon.setStyle({ color: '#2196F3' });
+                  } else {
+                    if (selectedLayer) {
+                      selectedLayer.setStyle({ color: '#2196F3' });
+                    }
+                    selectedLayer = currentPolygon;
+                    currentPolygon.setStyle({ color: '#FFA000' });
+                  }
+                });
+
+                const message = {
+                  type: 'polygon',
+                  geometry: currentPolygon.toGeoJSON().geometry
+                };
+                if (window.ReactNativeWebView) {
+                  window.ReactNativeWebView.postMessage(JSON.stringify(message));
+                }
+
+                polygonPoints = [];
+                currentPolygon = null;
+                drawingMode = null;
+                polygonButton.classList.remove('active');
+              }
+            }
+          });
+        }
+        
+        map.setView([lat, lng], 15);
+        loading.style.display = 'none';
+      } catch (error) {
+        sendDebugMessage(`Error initializing map: ${error.message}`);
+      }
+    }
+
+    function getCurrentLocation() {
+      if ("geolocation" in navigator) {
+        sendDebugMessage("Getting your current location...");
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            sendDebugMessage(`Location received: ${lat}, ${lng}`);
+            if (map) {
+              map.setView([lat, lng], 15);
+            } else {
+              initMap(lat, lng);
+            }
+          },
+          (error) => {
+            sendDebugMessage(`Location error: ${error.message}`);
+            let helpText = "";
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                helpText = "Location access denied. Please enable location services.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                helpText = "Location information unavailable.";
+                break;
+              case error.TIMEOUT:
+                helpText = "Location request timed out.";
+                break;
+              default:
+                helpText = "An unknown error occurred.";
+            }
+            locationStatus.textContent = helpText;
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        sendDebugMessage("Geolocation not supported by this browser");
+      }
+    }
+
+    function useDefaultLocation() {
+      initMap(18.0179, -76.8099); // Kingston, Jamaica
+      sendDebugMessage("Using default location (Kingston, Jamaica)");
+    }
+
+    // Button click handlers
+    locationButton.addEventListener('click', getCurrentLocation);
+    allowLocationButton.addEventListener('click', getCurrentLocation);
+    useDefaultLocationButton.addEventListener('click', useDefaultLocation);
+
+    markerButton.addEventListener('click', function() {
+      if (drawingMode === 'marker') {
+        drawingMode = null;
+        markerButton.classList.remove('active');
+      } else {
+        drawingMode = 'marker';
+        polygonButton.classList.remove('active');
+        markerButton.classList.add('active');
       }
     });
-    map.addControl(drawControl);
 
-    map.on(L.Draw.Event.CREATED, function (e) {
-      const layer = e.layer;
-      drawnItems.addLayer(layer);
-
-      const geojson = layer.toGeoJSON();
-      const message = {
-        geometry: geojson.geometry,
-        type: 'flood',
-        userId: 'test-user-123'
-      };
-
-      // Send to React Native
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(JSON.stringify(message));
+    polygonButton.addEventListener('click', function() {
+      if (drawingMode === 'polygon') {
+        drawingMode = null;
+        polygonButton.classList.remove('active');
       } else {
-        console.log("ReactNativeWebView not available.");
+        drawingMode = 'polygon';
+        markerButton.classList.remove('active');
+        polygonButton.classList.add('active');
       }
+    });
+
+    deleteButton.addEventListener('click', function() {
+      if (selectedLayer) {
+        drawnItems.removeLayer(selectedLayer);
+        selectedLayer = null;
+      }
+    });
+
+    // Initial message
+    sendDebugMessage("Click 'Enable Location' to use your current location, or 'Skip' to use default location.");
+
+    // Add hover effects for buttons
+    [markerButton, polygonButton, deleteButton, locationButton].forEach(button => {
+      button.addEventListener('mousemove', function(event) {
+        showTooltip(this.title, event.clientX, event.clientY);
+      });
+      button.addEventListener('mouseleave', hideTooltip);
     });
   </script>
 </body>
