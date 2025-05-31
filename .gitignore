@@ -58,3 +58,6 @@ __pycache__/
 # Ignore IP or local config files
 *.local.js
 *.config.js
+
+# Firebase config
+src/services/firebase.js
