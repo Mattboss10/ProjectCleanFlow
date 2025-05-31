@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,22 +8,105 @@ import {
   Modal,
   ScrollView,
   Pressable,
+  Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import * as Location from 'expo-location';
 
 export default function App() {
   const [error, setError] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [activeReport, setActiveReport] = useState(null);
+  const [location, setLocation] = useState(null);
+  const webViewRef = useRef(null);
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Permission to access location was denied');
+        return;
+      }
+
+      try {
+        let location = await Location.getCurrentPositionAsync({});
+        setLocation(location);
+        console.log('Location:', location);
+
+        // Update map with location if WebView is ready
+        if (webViewRef.current && location) {
+          webViewRef.current.injectJavaScript(`
+            (function() {
+              if (window.map) {
+                window.map.setView([${location.coords.latitude}, ${location.coords.longitude}], 15);
+              }
+              true;
+            })();
+          `);
+        }
+      } catch (err) {
+        setError('Error getting location: ' + err.message);
+      }
+    })();
+  }, []);
 
   const handleWebViewMessage = (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      setActiveReport(data);
-      // You can handle the report data here
-      console.log('Received report:', data);
+      if (data.type === 'requestLocation') {
+        // Handle location request from map
+        if (location) {
+          webViewRef.current?.injectJavaScript(`
+            (function() {
+              if (window.map) {
+                window.map.setView([${location.coords.latitude}, ${location.coords.longitude}], 15);
+              }
+              true;
+            })();
+          `);
+        }
+      } else if (data.type === 'areaDeleted') {
+        console.log('Area deleted:', JSON.stringify(data.geometry, null, 2));
+      } else {
+        setActiveReport(data);
+        console.log('Received report:', data);
+      }
     } catch (e) {
       console.error('Error parsing WebView message:', e);
+    }
+  };
+
+  const handleReportAreaPress = () => {
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`
+        (function() {
+          document.getElementById('polygonButton').click();
+          document.getElementById('guideArrow').style.display = 'block';
+          true;
+        })();
+      `);
+    }
+  };
+
+  const handleViewReportsPress = () => {
+    if (webViewRef.current) {
+      webViewRef.current.injectJavaScript(`
+        (function() {
+          if (window.map) {
+            const bounds = window.drawnItems.getBounds();
+            if (bounds.isValid()) {
+              window.map.fitBounds(bounds, { padding: [50, 50] });
+            } else {
+              window.map.setView(window.map.getCenter(), 9);
+            }
+            // Force a map refresh
+            setTimeout(() => {
+              window.map.invalidateSize();
+            }, 100);
+          }
+          true;
+        })();
+      `);
     }
   };
 
@@ -52,7 +135,6 @@ export default function App() {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                // Handle My Reports
                 setMenuVisible(false);
               }}
             >
@@ -61,7 +143,6 @@ export default function App() {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                // Handle Settings
                 setMenuVisible(false);
               }}
             >
@@ -70,7 +151,6 @@ export default function App() {
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => {
-                // Handle Help
                 setMenuVisible(false);
               }}
             >
@@ -91,6 +171,7 @@ export default function App() {
       
       <View style={styles.mapContainer}>
         <WebView
+          ref={webViewRef}
           source={{ uri: 'http://192.168.100.211:3000/leafletMap.html' }}
           style={styles.webview}
           onError={(syntheticEvent) => {
@@ -107,9 +188,18 @@ export default function App() {
         />
       </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.reportButton}>
-          <Text style={styles.reportButtonText}>📝 New Report</Text>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.reportButton]}
+          onPress={handleReportAreaPress}
+        >
+          <Text style={styles.actionButtonText}>Select Area to Report</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.viewButton]}
+          onPress={handleViewReportsPress}
+        >
+          <Text style={styles.actionButtonText}>See Reported Areas</Text>
         </TouchableOpacity>
       </View>
 
@@ -226,4 +316,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
   },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  actionButton: {
+    flex: 1,
+    margin: 5,
+    padding: 15,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  viewButton: {
+    backgroundColor: '#4CAF50',
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
 });
+

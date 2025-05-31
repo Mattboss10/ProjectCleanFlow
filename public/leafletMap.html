@@ -55,44 +55,40 @@
       background: #2196F3;
       color: white;
     }
-    .loading {
-      position: absolute;
+    .drawing-controls {
+      position: fixed;
       top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
+      right: 20px;
+      transform: translateY(-50%);
+      display: none;
+      flex-direction: column;
+      gap: 10px;
       z-index: 1000;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      max-width: 80%;
     }
-    .button {
-      background: #2196F3;
-      color: white;
+    .drawing-controls.visible {
+      display: flex;
+    }
+    .control-button {
+      width: 40px;
+      height: 40px;
       border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      margin: 5px;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: all 0.2s ease;
     }
-    .button:hover {
-      background: #1976D2;
+    .control-button.confirm {
+      background: #4CAF50;
+      color: white;
     }
-    .button.secondary {
-      background: #757575;
-    }
-    .button.secondary:hover {
-      background: #616161;
-    }
-    .instructions {
-      margin: 15px 0;
-      padding: 10px;
-      background: #f5f5f5;
-      border-radius: 5px;
-      font-size: 0.9em;
-      text-align: left;
+    .control-button.cancel {
+      background: #f44336;
+      color: white;
     }
     .tooltip {
       position: absolute;
@@ -104,33 +100,116 @@
       pointer-events: none;
       display: none;
     }
+    .success-message {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      z-index: 1000;
+      display: none;
+      animation: fadeInOut 3s ease-in-out;
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .guide-arrow {
+      position: fixed;
+      bottom: 75px;
+      right: 30px;
+      width: 30px;
+      height: 30px;
+      background: #2196F3;
+      clip-path: polygon(50% 100%, 0% 0%, 100% 0%);
+      display: none;
+      animation: bounce 1s infinite;
+      z-index: 1001;
+      pointer-events: none;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(10px); }
+    }
+    .instruction-message {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(33, 150, 243, 0.9);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      z-index: 1001;
+      display: none;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      white-space: nowrap;
+      max-width: 80%;
+    }
+    .delete-prompt {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 9999;
+      display: none;
+    }
+    .delete-prompt-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .delete-prompt-button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      min-width: 60px;
+    }
+    .delete-yes {
+      background: #f44336;
+      color: white;
+    }
+    .delete-no {
+      background: #9e9e9e;
+      color: white;
+    }
   </style>
 </head>
 <body>
-  <div id="loading" class="loading">
-    <div>📍 Location Access Required</div>
-    <div class="instructions">
-      <strong>To enable location:</strong>
-      <ol>
-        <li>Click "Enable Location" below</li>
-        <li>When prompted by your browser, click "Allow"</li>
-        <li>If denied, click the location icon in your browser's address bar to update permissions</li>
-      </ol>
-    </div>
-    <button id="allowLocation" class="button">Enable Location</button>
-    <button id="useDefaultLocation" class="button secondary">Skip (Use Default Location)</button>
-    <div id="locationStatus" style="margin-top: 10px; font-size: 0.9em; color: #666;"></div>
-  </div>
-
   <div id="map"></div>
   
   <div class="map-controls">
-    <button id="markerButton" class="map-button" title="Add Marker">📍</button>
     <button id="polygonButton" class="map-button" title="Draw Area">⬡</button>
-    <button id="deleteButton" class="map-button" title="Delete Selected">🗑️</button>
-    <button id="locationButton" class="map-button" title="Go to my location">��</button>
+  </div>
+
+  <div id="drawingControls" class="drawing-controls">
+    <button id="confirmDrawing" class="control-button confirm" title="Confirm">✓</button>
+    <button id="cancelDrawing" class="control-button cancel" title="Cancel">✕</button>
   </div>
   
+  <div id="successMessage" class="success-message">Area reported successfully!</div>
+  <div id="instructionMessage" class="instruction-message">Click the polygon tool and start drawing the area to report</div>
+  <div id="deletePrompt" class="delete-prompt">
+    <div>Delete this area?</div>
+    <div class="delete-prompt-buttons">
+      <button onclick="handleDeleteYes()" class="delete-prompt-button delete-yes">Yes</button>
+      <button onclick="handleDeleteNo()" class="delete-prompt-button delete-no">No</button>
+    </div>
+  </div>
+  <div id="guideArrow" class="guide-arrow"></div>
   <div id="tooltip" class="tooltip"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -140,15 +219,26 @@
     let drawingMode = null;
     let drawnItems;
     let selectedLayer = null;
-    const loading = document.getElementById('loading');
-    const locationButton = document.getElementById('locationButton');
-    const allowLocationButton = document.getElementById('allowLocation');
-    const useDefaultLocationButton = document.getElementById('useDefaultLocation');
-    const locationStatus = document.getElementById('locationStatus');
-    const markerButton = document.getElementById('markerButton');
+    let currentPolygon = null;
+    let polygonPoints = [];
+    let dottedPolyline = null;
+    let selectedForDeletion = null;
+    const drawingControls = document.getElementById('drawingControls');
+    const successMessage = document.getElementById('successMessage');
+    const guideArrow = document.getElementById('guideArrow');
     const polygonButton = document.getElementById('polygonButton');
-    const deleteButton = document.getElementById('deleteButton');
+    const confirmDrawing = document.getElementById('confirmDrawing');
+    const cancelDrawing = document.getElementById('cancelDrawing');
     const tooltip = document.getElementById('tooltip');
+    const instructionMessage = document.getElementById('instructionMessage');
+    const deletePrompt = document.getElementById('deletePrompt');
+
+    function showSuccessMessage() {
+      successMessage.style.display = 'block';
+      setTimeout(() => {
+        successMessage.style.display = 'none';
+      }, 3000);
+    }
 
     function showTooltip(text, x, y) {
       tooltip.textContent = text;
@@ -161,21 +251,72 @@
       tooltip.style.display = 'none';
     }
 
-    function sendDebugMessage(message) {
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({
-          type: 'debug',
-          message: message
-        }));
-      }
-      console.log('Debug:', message);
-      locationStatus.textContent = message;
+    function showDrawingControls() {
+      drawingControls.classList.add('visible');
     }
 
-    function initMap(lat, lng) {
+    function hideDrawingControls() {
+      drawingControls.classList.remove('visible');
+    }
+
+    function updateDottedLine() {
+      if (dottedPolyline) {
+        map.removeLayer(dottedPolyline);
+      }
+      if (polygonPoints.length > 0) {
+        dottedPolyline = L.polyline(polygonPoints, {
+          color: '#2196F3',
+          weight: 2,
+          dashArray: '5, 10',
+          opacity: 0.8
+        }).addTo(map);
+      }
+    }
+
+    function showInstructionMessage() {
+      instructionMessage.style.display = 'block';
+      setTimeout(() => {
+        instructionMessage.style.display = 'none';
+      }, 5000);
+    }
+
+    function showDeletePrompt(layer) {
+      console.log('Showing delete prompt');
+      selectedForDeletion = layer;
+      deletePrompt.style.display = 'block';
+    }
+
+    function hideDeletePrompt() {
+      console.log('Hiding delete prompt');
+      deletePrompt.style.display = 'none';
+      selectedForDeletion = null;
+    }
+
+    function handleDeleteYes() {
+      console.log('Delete confirmed');
+      if (selectedForDeletion) {
+        const coordinates = selectedForDeletion.getLatLngs()[0].map(latLng => [latLng.lng, latLng.lat]);
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'areaDeleted',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [coordinates]
+            }
+          }));
+        }
+        drawnItems.removeLayer(selectedForDeletion);
+        hideDeletePrompt();
+      }
+    }
+
+    function handleDeleteNo() {
+      console.log('Delete canceled');
+      hideDeletePrompt();
+    }
+
+    function initMap(lat = 18.0179, lng = -76.8099) {
       try {
-        sendDebugMessage(`Initializing map at ${lat}, ${lng}`);
-        
         if (!map) {
           map = L.map('map', {
             zoomControl: false,
@@ -189,182 +330,154 @@
           drawnItems = new L.FeatureGroup();
           map.addLayer(drawnItems);
 
-          // Map click handler for markers
+          drawnItems.setStyle({
+            clickable: true,
+            interactive: true
+          });
+
           map.on('click', function(e) {
-            if (drawingMode === 'marker') {
-              const marker = L.marker(e.latlng).addTo(drawnItems);
-              marker.on('click', function() {
-                if (selectedLayer === marker) {
-                  selectedLayer = null;
-                  marker.setIcon(new L.Icon.Default());
-                } else {
-                  if (selectedLayer) {
-                    selectedLayer.setIcon(new L.Icon.Default());
-                  }
-                  selectedLayer = marker;
-                  marker.setIcon(new L.Icon.Default({ className: 'selected-marker' }));
-                }
-              });
+            if (drawingMode === 'polygon') {
+              polygonPoints.push([e.latlng.lat, e.latlng.lng]);
+              updateDottedLine();
+              
+              if (polygonPoints.length === 1) {
+                guideArrow.style.display = 'none';
+              }
+              
+              if (polygonPoints.length > 2) {
+                showDrawingControls();
+              }
+            }
+          });
+
+          // Click handler for polygons
+          drawnItems.on('click', function(e) {
+            console.log('Polygon clicked');
+            if (e.layer instanceof L.Polygon) {
+              console.log('Valid polygon clicked, showing delete prompt');
+              showDeletePrompt(e.layer);
+              L.DomEvent.stopPropagation(e);
+            }
+          });
+
+          // When a polygon is created
+          map.on('draw:created', function(e) {
+            const layer = e.layer;
+            layer.on('click', function(e) {
+              console.log('New polygon clicked');
+              selectedForDeletion = e.target;
+              showDeletePrompt(e.target);
+              L.DomEvent.stopPropagation(e);
+            });
+            drawnItems.addLayer(layer);
+          });
+
+          // Drawing control handlers
+          confirmDrawing.addEventListener('click', function() {
+            if (polygonPoints.length > 2) {
+              if (dottedPolyline) {
+                map.removeLayer(dottedPolyline);
+              }
+              
+              const finalPolygon = L.polygon(polygonPoints, {
+                color: '#2196F3',
+                weight: 2
+              }).addTo(drawnItems);
 
               const message = {
-                type: 'marker',
+                type: 'polygon',
                 geometry: {
-                  type: 'Point',
-                  coordinates: [e.latlng.lng, e.latlng.lat]
+                  type: 'Polygon',
+                  coordinates: [polygonPoints.map(point => [point[1], point[0]])]
                 }
               };
               if (window.ReactNativeWebView) {
                 window.ReactNativeWebView.postMessage(JSON.stringify(message));
               }
+              
+              showSuccessMessage();
+            }
+            resetDrawing();
+          });
+
+          cancelDrawing.addEventListener('click', resetDrawing);
+
+          // Button handlers
+          polygonButton.addEventListener('click', function() {
+            resetDrawing();
+            drawingMode = drawingMode === 'polygon' ? null : 'polygon';
+            polygonButton.classList.toggle('active');
+            guideArrow.style.display = 'none';
+            if (drawingMode === 'polygon') {
+              showInstructionMessage();
             }
           });
 
-          let polygonPoints = [];
-          let currentPolygon = null;
-
-          // Map click handler for polygons
-          map.on('click', function(e) {
-            if (drawingMode === 'polygon') {
-              polygonPoints.push([e.latlng.lat, e.latlng.lng]);
-              
-              if (currentPolygon) {
-                map.removeLayer(currentPolygon);
-              }
-              
-              if (polygonPoints.length > 2) {
-                currentPolygon = L.polygon(polygonPoints, {
-                  color: '#2196F3',
-                  weight: 2
-                }).addTo(drawnItems);
-
-                currentPolygon.on('click', function() {
-                  if (selectedLayer === currentPolygon) {
-                    selectedLayer = null;
-                    currentPolygon.setStyle({ color: '#2196F3' });
-                  } else {
-                    if (selectedLayer) {
-                      selectedLayer.setStyle({ color: '#2196F3' });
-                    }
-                    selectedLayer = currentPolygon;
-                    currentPolygon.setStyle({ color: '#FFA000' });
-                  }
-                });
-
-                const message = {
-                  type: 'polygon',
-                  geometry: currentPolygon.toGeoJSON().geometry
-                };
-                if (window.ReactNativeWebView) {
-                  window.ReactNativeWebView.postMessage(JSON.stringify(message));
-                }
-
-                polygonPoints = [];
-                currentPolygon = null;
-                drawingMode = null;
-                polygonButton.classList.remove('active');
-              }
+          // Update the zoom out functionality
+          map.on('zoomend', function() {
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'zoomChanged',
+                zoom: map.getZoom()
+              }));
             }
           });
         }
-        
-        map.setView([lat, lng], 15);
-        loading.style.display = 'none';
       } catch (error) {
-        sendDebugMessage(`Error initializing map: ${error.message}`);
+        console.error('Error initializing map:', error);
       }
     }
 
-    function getCurrentLocation() {
-      if ("geolocation" in navigator) {
-        sendDebugMessage("Getting your current location...");
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            sendDebugMessage(`Location received: ${lat}, ${lng}`);
-            if (map) {
-              map.setView([lat, lng], 15);
-            } else {
-              initMap(lat, lng);
-            }
-          },
-          (error) => {
-            sendDebugMessage(`Location error: ${error.message}`);
-            let helpText = "";
-            switch(error.code) {
-              case error.PERMISSION_DENIED:
-                helpText = "Location access denied. Please enable location services.";
-                break;
-              case error.POSITION_UNAVAILABLE:
-                helpText = "Location information unavailable.";
-                break;
-              case error.TIMEOUT:
-                helpText = "Location request timed out.";
-                break;
-              default:
-                helpText = "An unknown error occurred.";
-            }
-            locationStatus.textContent = helpText;
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
+    function resetDrawing() {
+      if (dottedPolyline) {
+        map.removeLayer(dottedPolyline);
+      }
+      if (currentPolygon) {
+        map.removeLayer(currentPolygon);
+      }
+      dottedPolyline = null;
+      currentPolygon = null;
+      polygonPoints = [];
+      hideDrawingControls();
+      drawingMode = null;
+      polygonButton.classList.remove('active');
+    }
+
+    function showGuideArrow() {
+      guideArrow.style.display = 'block';
+    }
+
+    function hideGuideArrow() {
+      guideArrow.style.display = 'none';
+    }
+
+    // Initialize map with default location
+    initMap();
+
+    // Handle messages from React Native
+    window.addEventListener('message', function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'location' && data.coords) {
+          map.setView([data.coords.latitude, data.coords.longitude], 15);
+        } else if (data.type === 'showPolygonGuide') {
+          showGuideArrow();
+          showInstructionMessage();
+        } else if (data.type === 'zoomOut') {
+          const bounds = drawnItems.getBounds();
+          if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50] });
+          } else {
+            map.setView(map.getCenter(), 9);
           }
-        );
-      } else {
-        sendDebugMessage("Geolocation not supported by this browser");
+          // Force a map refresh
+          setTimeout(() => {
+            map.invalidateSize();
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error handling message:', error);
       }
-    }
-
-    function useDefaultLocation() {
-      initMap(18.0179, -76.8099); // Kingston, Jamaica
-      sendDebugMessage("Using default location (Kingston, Jamaica)");
-    }
-
-    // Button click handlers
-    locationButton.addEventListener('click', getCurrentLocation);
-    allowLocationButton.addEventListener('click', getCurrentLocation);
-    useDefaultLocationButton.addEventListener('click', useDefaultLocation);
-
-    markerButton.addEventListener('click', function() {
-      if (drawingMode === 'marker') {
-        drawingMode = null;
-        markerButton.classList.remove('active');
-      } else {
-        drawingMode = 'marker';
-        polygonButton.classList.remove('active');
-        markerButton.classList.add('active');
-      }
-    });
-
-    polygonButton.addEventListener('click', function() {
-      if (drawingMode === 'polygon') {
-        drawingMode = null;
-        polygonButton.classList.remove('active');
-      } else {
-        drawingMode = 'polygon';
-        markerButton.classList.remove('active');
-        polygonButton.classList.add('active');
-      }
-    });
-
-    deleteButton.addEventListener('click', function() {
-      if (selectedLayer) {
-        drawnItems.removeLayer(selectedLayer);
-        selectedLayer = null;
-      }
-    });
-
-    // Initial message
-    sendDebugMessage("Click 'Enable Location' to use your current location, or 'Skip' to use default location.");
-
-    // Add hover effects for buttons
-    [markerButton, polygonButton, deleteButton, locationButton].forEach(button => {
-      button.addEventListener('mousemove', function(event) {
-        showTooltip(this.title, event.clientX, event.clientY);
-      });
-      button.addEventListener('mouseleave', hideTooltip);
     });
   </script>
 </body>
