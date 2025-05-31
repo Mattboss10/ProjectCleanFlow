@@ -9,12 +9,19 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-firebase/app": "^22.2.0",
+    "@react-native-firebase/database": "^22.2.0",
     "expo": "~53.0.9",
+    "expo-background-fetch": "~13.1.5",
+    "expo-location": "~18.1.5",
+    "expo-notifications": "~0.31.2",
     "expo-status-bar": "~2.2.3",
+    "expo-task-manager": "~13.1.5",
+    "firebase": "^11.8.1",
+    "geolib": "^3.3.4",
     "react": "19.0.0",
     "react-native": "0.79.2",
-    "react-native-webview": "13.13.5",
-    "expo-location": "~18.1.5"
+    "react-native-webview": "13.13.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

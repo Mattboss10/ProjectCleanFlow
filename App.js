@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
+import { startLocationTracking, stopLocationTracking, saveReportedArea, getReportedAreas } from './src/services/locationService';
 
 export default function App() {
   const [error, setError] = useState(null);
@@ -29,11 +30,32 @@ export default function App() {
       }
 
       try {
+        // Start background location tracking
+        await startLocationTracking();
+        
+        // Get current location
         let location = await Location.getCurrentPositionAsync({});
         setLocation(location);
-        console.log('Location:', location);
+        
+        // Load reported areas
+        const areas = await getReportedAreas();
+        if (areas && webViewRef.current) {
+          webViewRef.current.injectJavaScript(`
+            (function() {
+              if (window.map) {
+                ${Object.values(areas).map(area => `
+                  L.polygon(${JSON.stringify(area.coordinates)}, {
+                    color: '#2196F3',
+                    weight: 2
+                  }).addTo(window.drawnItems);
+                `).join('')}
+              }
+              true;
+            })();
+          `);
+        }
 
-        // Update map with location if WebView is ready
+        // Update map with location
         if (webViewRef.current && location) {
           webViewRef.current.injectJavaScript(`
             (function() {
@@ -48,13 +70,17 @@ export default function App() {
         setError('Error getting location: ' + err.message);
       }
     })();
+
+    // Cleanup function
+    return () => {
+      stopLocationTracking();
+    };
   }, []);
 
-  const handleWebViewMessage = (event) => {
+  const handleWebViewMessage = async (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === 'requestLocation') {
-        // Handle location request from map
         if (location) {
           webViewRef.current?.injectJavaScript(`
             (function() {
@@ -67,9 +93,15 @@ export default function App() {
         }
       } else if (data.type === 'areaDeleted') {
         console.log('Area deleted:', JSON.stringify(data.geometry, null, 2));
-      } else {
+      } else if (data.type === 'polygon') {
+        // Save reported area to Firebase
+        const success = await saveReportedArea(data.geometry.coordinates[0]);
+        if (success) {
+          Alert.alert('Success', 'Area has been reported and saved.');
+        } else {
+          Alert.alert('Error', 'Failed to save reported area.');
+        }
         setActiveReport(data);
-        console.log('Received report:', data);
       }
     } catch (e) {
       console.error('Error parsing WebView message:', e);
