@@ -17,7 +17,11 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cleanflow.app"
+      "bundleIdentifier": "com.cleanflow.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "CleanFlow needs access to location to show your position on the map and for reporting incidents.",
+        "NSLocationAlwaysUsageDescription": "CleanFlow needs access to location to show your position on the map and for reporting incidents."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -25,10 +29,19 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.cleanflow.app"
+      "package": "com.cleanflow.app",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow CleanFlow to use your location to show your position on the map and for reporting incidents."
+        }
+      ]
+    ]
   }
 }
