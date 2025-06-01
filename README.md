@@ -99,15 +99,14 @@ We hope the app will attract widespread adoption where it will reach a critical 
 2. **Reporting a Flood Area**
    - Click the polygon tool (⬡)
    - Click four points on the map to define the area
-   - Confirm or cancel using the bottom controls
+   - Confirm or cancel using the side controls
    - Success message will appear when area is saved
 
 3. **Managing Reports**
    - Click any drawn area to select it
-   - Use the delete button (🗑️) to remove selected areas
-   - Use the recenter button (📍) to return to your location
+   - Select the responding prompt as to carry out your action to delete , Yes or No.
 
 ## 🔒 Security Notes
-- Location data is only used for map centering
+- Location data is only used to provide data for notification alerts.
 - No personal data is stored without consent
-- All communications are handled securely
+- All communications are handled securely through secure networking (Google Firebase RTDB)
