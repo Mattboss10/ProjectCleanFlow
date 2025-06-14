@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -17,20 +16,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cleanflow.app",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "CleanFlow needs access to location to show your position on the map and for reporting incidents.",
-        "NSLocationAlwaysUsageDescription": "CleanFlow needs access to location to show your position on the map and for reporting incidents."
-      }
+      "bundleIdentifier": "com.yourcompany.cleanflow"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.cleanflow.app",
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "package": "com.yourcompany.cleanflow"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -39,9 +32,20 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow CleanFlow to use your location to show your position on the map and for reporting incidents."
+          "locationAlwaysAndWhenInUsePermission": "Allow CleanFlow to use your location to track nearby reported areas."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification-sound.wav"]
         }
       ]
-    ]
+    ],
+    "extra": {
+      "devServerPort": 3000
+    }
   }
 }

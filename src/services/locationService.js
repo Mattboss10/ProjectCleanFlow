@@ -4,6 +4,8 @@ import * as Notifications from 'expo-notifications';
 import { ref, set, onValue } from 'firebase/database';
 import { database } from './firebase';
 import { getDistance } from 'geolib';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 const LOCATION_TRACKING = 'location-tracking';
 const GEOFENCE_RADIUS = 100; // meters
@@ -16,6 +18,39 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+// Request notification permissions
+const requestNotificationPermissions = async () => {
+  // Skip notification setup in development
+  if (__DEV__) {
+    console.log('Skipping notification setup in development mode');
+    return true;
+  }
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  
+  if (finalStatus !== 'granted') {
+    console.log('Failed to get push token for push notification!');
+    return false;
+  }
+  
+  return true;
+};
 
 // Define the background task
 TaskManager.defineTask(LOCATION_TRACKING, async ({ data: { locations }, error }) => {
@@ -40,14 +75,19 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data: { locations }, error })
       );
 
       if (distance <= GEOFENCE_RADIUS) {
-        // Send notification
-        Notifications.scheduleNotificationAsync({
-          content: {
-            title: "Reported Area Nearby",
-            body: "You are near a reported area. Please be cautious.",
-          },
-          trigger: null,
-        });
+        // Only send notification if not in development mode
+        if (!__DEV__) {
+          Notifications.scheduleNotificationAsync({
+            content: {
+              title: "Reported Area Nearby",
+              body: "You are near a reported area. Please be cautious.",
+              data: { area },
+            },
+            trigger: null,
+          });
+        } else {
+          console.log('Would send notification in production mode');
+        }
       }
     });
   });
@@ -55,6 +95,9 @@ TaskManager.defineTask(LOCATION_TRACKING, async ({ data: { locations }, error })
 
 export const startLocationTracking = async () => {
   try {
+    // Request notification permissions first
+    await requestNotificationPermissions();
+
     const { status } = await Location.requestBackgroundPermissionsAsync();
     if (status !== 'granted') {
       console.error('Background location permission denied');
@@ -88,11 +131,21 @@ export const saveReportedArea = async (coordinates) => {
     const areaId = Date.now().toString();
     const center = calculatePolygonCenter(coordinates);
     
-    await set(ref(database, `reportedAreas/${areaId}`), {
-      coordinates,
-      center,
+    // Log the data we're saving
+    console.log('Saving area with coordinates:', coordinates);
+    
+    const areaData = {
+      coordinates: coordinates,
+      center: center,
       timestamp: Date.now(),
-    });
+      type: 'Feature',
+      properties: {
+        id: areaId
+      }
+    };
+    
+    await set(ref(database, `reportedAreas/${areaId}`), areaData);
+    console.log('Area saved successfully:', areaData);
     
     return true;
   } catch (err) {
@@ -102,21 +155,42 @@ export const saveReportedArea = async (coordinates) => {
 };
 
 export const getReportedAreas = async () => {
+  console.log('Fetching reported areas from Firebase...');
   return new Promise((resolve) => {
     const areasRef = ref(database, 'reportedAreas');
     onValue(areasRef, (snapshot) => {
-      resolve(snapshot.val() || {});
+      const areas = snapshot.val() || {};
+      console.log('Firebase returned areas:', areas);
+      
+      // Transform the data to ensure proper structure
+      const transformedAreas = Object.entries(areas).reduce((acc, [id, area]) => {
+        acc[id] = {
+          ...area,
+          type: 'Feature',
+          properties: {
+            ...area.properties,
+            id: id
+          }
+        };
+        return acc;
+      }, {});
+      
+      console.log('Transformed areas:', transformedAreas);
+      resolve(transformedAreas);
+    }, (error) => {
+      console.error('Firebase error:', error);
+      resolve({});
     });
   });
 };
 
 // Helper function to calculate polygon center
 const calculatePolygonCenter = (coordinates) => {
-  const lats = coordinates.map(coord => coord[0]);
-  const lngs = coordinates.map(coord => coord[1]);
+  const lats = coordinates.map(coord => coord[1]); // Use latitude (second value)
+  const lngs = coordinates.map(coord => coord[0]); // Use longitude (first value)
   
   const centerLat = lats.reduce((a, b) => a + b) / lats.length;
   const centerLng = lngs.reduce((a, b) => a + b) / lngs.length;
   
-  return [centerLat, centerLng];
+  return [centerLng, centerLat]; // Keep as [lng, lat] for consistency
 }; 

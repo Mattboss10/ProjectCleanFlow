@@ -315,117 +315,121 @@
       hideDeletePrompt();
     }
 
-    function initMap(lat = 18.0179, lng = -76.8099) {
-      try {
-        if (!map) {
-          map = L.map('map', {
-            zoomControl: false,
-            attributionControl: false
-          }).setView([lat, lng], 15);
+    function initMap() {
+      // Initialize the map
+      map = L.map('map').setView([0, 0], 2);
+      
+      // Add the tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Initialize the FeatureGroup to store editable layers
+      drawnItems = new L.FeatureGroup();
+      map.addLayer(drawnItems);
+
+      // Notify React Native that the map is ready
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'mapReady'
+      }));
+
+      // Request initial location
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        type: 'requestLocation'
+      }));
+
+      drawnItems.setStyle({
+        clickable: true,
+        interactive: true
+      });
+
+      map.on('click', function(e) {
+        if (drawingMode === 'polygon') {
+          polygonPoints.push([e.latlng.lat, e.latlng.lng]);
+          updateDottedLine();
           
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-          }).addTo(map);
-
-          drawnItems = new L.FeatureGroup();
-          map.addLayer(drawnItems);
-
-          drawnItems.setStyle({
-            clickable: true,
-            interactive: true
-          });
-
-          map.on('click', function(e) {
-            if (drawingMode === 'polygon') {
-              polygonPoints.push([e.latlng.lat, e.latlng.lng]);
-              updateDottedLine();
-              
-              if (polygonPoints.length === 1) {
-                guideArrow.style.display = 'none';
-              }
-              
-              if (polygonPoints.length > 2) {
-                showDrawingControls();
-              }
-            }
-          });
-
-          // Click handler for polygons
-          drawnItems.on('click', function(e) {
-            console.log('Polygon clicked');
-            if (e.layer instanceof L.Polygon) {
-              console.log('Valid polygon clicked, showing delete prompt');
-              showDeletePrompt(e.layer);
-              L.DomEvent.stopPropagation(e);
-            }
-          });
-
-          // When a polygon is created
-          map.on('draw:created', function(e) {
-            const layer = e.layer;
-            layer.on('click', function(e) {
-              console.log('New polygon clicked');
-              selectedForDeletion = e.target;
-              showDeletePrompt(e.target);
-              L.DomEvent.stopPropagation(e);
-            });
-            drawnItems.addLayer(layer);
-          });
-
-          // Drawing control handlers
-          confirmDrawing.addEventListener('click', function() {
-            if (polygonPoints.length > 2) {
-              if (dottedPolyline) {
-                map.removeLayer(dottedPolyline);
-              }
-              
-              const finalPolygon = L.polygon(polygonPoints, {
-                color: '#2196F3',
-                weight: 2
-              }).addTo(drawnItems);
-
-              const message = {
-                type: 'polygon',
-                geometry: {
-                  type: 'Polygon',
-                  coordinates: [polygonPoints.map(point => [point[1], point[0]])]
-                }
-              };
-              if (window.ReactNativeWebView) {
-                window.ReactNativeWebView.postMessage(JSON.stringify(message));
-              }
-              
-              showSuccessMessage();
-            }
-            resetDrawing();
-          });
-
-          cancelDrawing.addEventListener('click', resetDrawing);
-
-          // Button handlers
-          polygonButton.addEventListener('click', function() {
-            resetDrawing();
-            drawingMode = drawingMode === 'polygon' ? null : 'polygon';
-            polygonButton.classList.toggle('active');
+          if (polygonPoints.length === 1) {
             guideArrow.style.display = 'none';
-            if (drawingMode === 'polygon') {
-              showInstructionMessage();
-            }
-          });
-
-          // Update the zoom out functionality
-          map.on('zoomend', function() {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'zoomChanged',
-                zoom: map.getZoom()
-              }));
-            }
-          });
+          }
+          
+          if (polygonPoints.length > 2) {
+            showDrawingControls();
+          }
         }
-      } catch (error) {
-        console.error('Error initializing map:', error);
-      }
+      });
+
+      // Click handler for polygons
+      drawnItems.on('click', function(e) {
+        console.log('Polygon clicked');
+        if (e.layer instanceof L.Polygon) {
+          console.log('Valid polygon clicked, showing delete prompt');
+          showDeletePrompt(e.layer);
+          L.DomEvent.stopPropagation(e);
+        }
+      });
+
+      // When a polygon is created
+      map.on('draw:created', function(e) {
+        const layer = e.layer;
+        layer.on('click', function(e) {
+          console.log('New polygon clicked');
+          selectedForDeletion = e.target;
+          showDeletePrompt(e.target);
+          L.DomEvent.stopPropagation(e);
+        });
+        drawnItems.addLayer(layer);
+      });
+
+      // Drawing control handlers
+      confirmDrawing.addEventListener('click', function() {
+        if (polygonPoints.length > 2) {
+          if (dottedPolyline) {
+            map.removeLayer(dottedPolyline);
+          }
+          
+          const finalPolygon = L.polygon(polygonPoints, {
+            color: '#2196F3',
+            weight: 2
+          }).addTo(drawnItems);
+
+          const message = {
+            type: 'polygon',
+            geometry: {
+              type: 'Polygon',
+              coordinates: [polygonPoints.map(point => [point[1], point[0]])]
+            }
+          };
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify(message));
+          }
+          
+          showSuccessMessage();
+        }
+        resetDrawing();
+      });
+
+      cancelDrawing.addEventListener('click', resetDrawing);
+
+      // Button handlers
+      polygonButton.addEventListener('click', function() {
+        resetDrawing();
+        drawingMode = drawingMode === 'polygon' ? null : 'polygon';
+        polygonButton.classList.toggle('active');
+        guideArrow.style.display = 'none';
+        if (drawingMode === 'polygon') {
+          showInstructionMessage();
+        }
+      });
+
+      // Update the zoom out functionality
+      map.on('zoomend', function() {
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            type: 'zoomChanged',
+            zoom: map.getZoom()
+          }));
+        }
+      });
     }
 
     function resetDrawing() {
@@ -451,8 +455,8 @@
       guideArrow.style.display = 'none';
     }
 
-    // Initialize map with default location
-    initMap();
+    // Initialize the map when the page loads
+    window.onload = initMap;
 
     // Handle messages from React Native
     window.addEventListener('message', function(event) {
