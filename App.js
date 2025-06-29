@@ -158,7 +158,11 @@ export default function App() {
     if (webViewRef.current) {
       webViewRef.current.injectJavaScript(`
         (function() {
-          document.getElementById('polygonButton').click();
+          if (window.activatePolygonDrawing) {
+            window.activatePolygonDrawing();
+          } else {
+            console.error('activatePolygonDrawing function not found');
+          }
           true;
         })();
       `);

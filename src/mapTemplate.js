@@ -35,6 +35,55 @@ export const mapHtml = `
       z-index: 1000;
       display: none;
     }
+    /* Custom styles for draw control descriptions */
+    .leaflet-draw-toolbar .leaflet-draw-draw-polygon {
+      position: relative;
+    }
+    .leaflet-draw-toolbar .leaflet-draw-draw-polygon::after {
+      content: "Select Area";
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.6);
+      padding: 4px 8px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      font-size: 12px;
+      white-space: nowrap;
+      margin-left: 8px;
+      z-index: 1000;
+      display: var(--description-display, block);
+    }
+    .leaflet-draw-toolbar .leaflet-draw-edit-edit {
+      position: relative;
+    }
+    .leaflet-draw-toolbar .leaflet-draw-edit-edit::after {
+      content: "Edit";
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.6);
+      padding: 4px 8px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      font-size: 12px;
+      white-space: nowrap;
+      margin-left: 8px;
+      z-index: 1000;
+      display: var(--description-display, block);
+    }
+    /* Hide descriptions when drawing mode is active */
+    .leaflet-draw-toolbar.leaflet-draw-toolbar-draw .leaflet-draw-draw-polygon::after,
+    .leaflet-draw-toolbar.leaflet-draw-toolbar-edit .leaflet-draw-edit-edit::after {
+      display: none;
+    }
+    /* Hide descriptions when buttons are pressed */
+    .leaflet-draw-toolbar .leaflet-draw-draw-polygon.pressed::after,
+    .leaflet-draw-toolbar .leaflet-draw-edit-edit.pressed::after {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -94,6 +143,39 @@ export const mapHtml = `
     });
     map.addControl(drawControl);
 
+    // Function to activate polygon drawing mode
+    window.activatePolygonDrawing = function() {
+      console.log('Activating polygon drawing mode');
+      // Find the polygon draw button and click it
+      const polygonButton = document.querySelector('.leaflet-draw-draw-polygon');
+      if (polygonButton) {
+        // Hide the description immediately
+        polygonButton.style.setProperty('--description-display', 'none');
+        polygonButton.click();
+        console.log('Polygon drawing mode activated');
+      } else {
+        console.error('Polygon button not found');
+      }
+    };
+
+    // Add event listeners after controls are added
+    setTimeout(function() {
+      const polygonButton = document.querySelector('.leaflet-draw-draw-polygon');
+      const editButton = document.querySelector('.leaflet-draw-edit-edit');
+      
+      if (polygonButton) {
+        polygonButton.addEventListener('click', function() {
+          this.style.setProperty('--description-display', 'none');
+        });
+      }
+      
+      if (editButton) {
+        editButton.addEventListener('click', function() {
+          this.style.setProperty('--description-display', 'none');
+        });
+      }
+    }, 100);
+
     map.on('draw:created', function(e) {
       console.log('Draw created event fired');
       let layer = e.layer;
@@ -108,9 +190,11 @@ export const mapHtml = `
       });
       
       window.ReactNativeWebView.postMessage(JSON.stringify({
-        type: 'reportArea',
-        coordinates: coordinates,
-        center: [center.lng, center.lat]
+        type: 'polygon',
+        geometry: {
+          coordinates: [coordinates],
+          type: 'Polygon'
+        }
       }));
       
       document.getElementById('successMessage').style.display = 'block';
