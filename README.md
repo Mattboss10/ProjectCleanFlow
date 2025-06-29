@@ -110,3 +110,72 @@ We hope the app will attract widespread adoption where it will reach a critical 
 - Location data is only used to provide data for notification alerts.
 - No personal data is stored without consent
 - All communications are handled securely through secure networking (Google Firebase RTDB)
+
+## SMS Notification System
+
+The app uses Firebase Authentication for phone number verification and sends SMS notifications when users are within 100 meters of reported areas. This system works with Expo Go and doesn't require development builds.
+
+### How it works:
+
+1. **Phone Verification**: Users verify their phone number through the app menu
+2. **Background Tracking**: The app tracks location in the background
+3. **Proximity Detection**: When users are within 100m of a reported area, an SMS notification is triggered
+4. **Rate Limiting**: Notifications are limited to once per 5 minutes per area to prevent spam
+
+### Benefits over Expo Notifications:
+
+- Works with Expo Go (no development build required)
+- More reliable delivery
+- Better user engagement
+- Foundation for future monetization through SMS services
+
+## Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Configure Firebase:
+   - Update `src/services/firebase.js` with your Firebase configuration
+   - Enable Phone Authentication in your Firebase console
+   - Set up Firebase Realtime Database
+
+3. Start the app:
+   ```bash
+   npm start
+   ```
+
+## Firebase Configuration
+
+Make sure to enable the following Firebase services:
+- **Authentication** (Phone provider)
+- **Realtime Database**
+- **Cloud Functions** (optional, for actual SMS sending)
+
+## Usage
+
+1. **Report an Area**: Use the "Select Area to Report" button to draw a polygon on the map
+2. **Verify Phone**: Go to the menu (☰) and select "Verify Phone" to enable SMS notifications
+3. **View Reports**: Use "See Reported Areas" to view all reported areas on the map
+4. **Notification History**: Check your notification history in the menu
+
+## Technical Details
+
+- **Map**: Leaflet.js embedded in React Native WebView
+- **Database**: Firebase Realtime Database
+- **Authentication**: Firebase Phone Authentication
+- **Location**: Expo Location with background tracking
+- **Notifications**: Custom SMS service (currently logs to console, ready for SMS integration)
+
+## Future Enhancements
+
+- Integration with actual SMS service (Twilio, AWS SNS, etc.)
+- Push notifications for development builds
+- User profiles and preferences
+- Area categorization and filtering
+- Community features and reporting
+
+## License
+
+This project is licensed under the MIT License.

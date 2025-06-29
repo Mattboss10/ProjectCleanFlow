@@ -1,4 +1,4 @@
-package com.cleanflow.app
+package com.yourcompany.cleanflow
 
 import android.app.Application
 import android.content.res.Configuration
