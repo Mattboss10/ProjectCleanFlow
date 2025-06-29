@@ -17,10 +17,12 @@ import * as Location from 'expo-location';
 import { startLocationTracking, stopLocationTracking, saveReportedArea, getReportedAreas } from './src/services/locationService';
 import Constants from 'expo-constants';
 import { mapHtml } from './src/mapTemplate';
+import SMSTest from './src/components/SMSTest';
 
 export default function App() {
   const [error, setError] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [smsTestVisible, setSmsTestVisible] = useState(false);
   const [activeReport, setActiveReport] = useState(null);
   const [location, setLocation] = useState(null);
   const [reportedAreas, setReportedAreas] = useState({});
@@ -224,6 +226,15 @@ export default function App() {
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
+                setSmsTestVisible(true);
+              }}
+            >
+              <Text style={styles.menuItemText}>📱 Test SMS</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuVisible(false);
               }}
             >
               <Text style={styles.menuItemText}>⚙️ Settings</Text>
@@ -321,6 +332,11 @@ export default function App() {
       </View>
 
       <Menu />
+
+      <SMSTest
+        visible={smsTestVisible}
+        onClose={() => setSmsTestVisible(false)}
+      />
 
       {error && (
         <View style={styles.errorContainer}>
