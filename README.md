@@ -78,6 +78,15 @@ We hope the app will attract widespread adoption where it will reach a critical 
    - Clear your app's cache
    - Restart both the Flask server and the Expo app
    - Make sure all files in the `public` directory are present
+5. **Frontend commands not working**
+   - Make sure the Expo CLI is installed: 
+   run npm install -g @expo/cli.
+
+   If error try installing as local dependency (recommended)
+   Run: cd /Users/matthewcohen/ProjectCleanFlow && npm install --save-dev @expo/cli
+
+6. **Error 500 on app build**
+     - this is due to an issue with the dev Server
 
 ### Finding Your IP Address
 - On MacOS: Run `ipconfig getifaddr en0` in terminal

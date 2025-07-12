@@ -24,7 +24,8 @@
     "react-native-webview": "13.13.5"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "@expo/cli": "^0.24.20"
   },
   "private": true
 }
