@@ -14,36 +14,36 @@ https://github.com/user-attachments/assets/581bfe0e-e00b-4bec-bea6-cff4f64d0926
 
 ## ✨ Features
 
-### Map Interface
-- Interactive Leaflet map with custom controls
-- Geolocation support with automatic map centering
-- Custom area selection with 4-point polygon drawing
-- Visual feedback during area selection
-- Confirmation system for drawn areas
-- Success notifications with animations
-- Ability to delete selected areas
+-Map Interface
+ - Interactive Leaflet map with custom controls
+ - Geolocation support with automatic map centering
+ - Custom area selection with 4-point polygon drawing
+ - Visual feedback during area selection
+ - Confirmation system for drawn areas
+ - Success notifications with animations
+ - Ability to delete selected areas
 
-### Location Handling
-- Automatic location detection
-- Permission handling for location services
-- Default location fallback (Kingston, Jamaica)
-- Quick recenter button for current location
-- Clear error messages for location issues
+-Location Handling
+ - Automatic location detection
+ - Permission handling for location services
+ - Default location fallback (Kingston, Jamaica)
+ - Quick recenter button for current location
+ - Clear error messages for location issues
 
-### User Interface
-- Clean, modern design with intuitive controls
-- Mobile-optimized button placement
-- Visual feedback for active tools
-- Centered confirmation controls
-- Responsive layout for all screen sizes
-- Clear success/error notifications
+-User Interface
+ - Clean, modern design with intuitive controls
+ - Mobile-optimized button placement
+ - Visual feedback for active tools
+ - Centered confirmation controls
+ - Responsive layout for all screen sizes
+ - Clear success/error notifications
 
-### Backend Integration
-- Flask backend server for handling reports
-- Cross-platform compatibility
-- Private IP Protection
-- Proper error handling and logging
-- API endpoints for data submission
+-Backend Integration
+ - Flask backend server for handling reports
+ - Cross-platform compatibility
+ - Private IP Protection
+ - Proper error handling and logging
+ - API endpoints for data submission
 
 ## 🚀 Getting Started
 
