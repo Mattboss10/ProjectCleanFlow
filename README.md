@@ -8,7 +8,7 @@ We hope the app will attract widespread adoption where it will reach a critical 
 
 ##Demo
 
-https://github.com/user-attachments/assets/113f47df-9ed5-4a01-9974-08fed8e0ba03
+https://github.com/user-attachments/assets/581bfe0e-e00b-4bec-bea6-cff4f64d0926
 
 
 
