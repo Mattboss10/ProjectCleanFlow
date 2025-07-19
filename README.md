@@ -6,6 +6,12 @@ ProjectCleanFlow is a mobile-first reporting tool for flooding and other environ
 The App's Goal is to use Geospatial Data to send notification alerts to the user to warn them of potentially dangerous areas, through customizable notifications and prompts users will be subtly nudged to carry out certain actions ranging from littering awareness to re-routing to safer areas. 
 We hope the app will attract widespread adoption where it will reach a critical mass of users so that we have a well connected network to support better diaster preparedness in the country.
 
+##Demo
+
+https://github.com/user-attachments/assets/113f47df-9ed5-4a01-9974-08fed8e0ba03
+
+
+
 ## ✨ Features
 
 ### Map Interface
